@@ -6,7 +6,12 @@ export function loadResume() {
     const raw = localStorage.getItem(KEY)
     if (!raw) return null
     const data = JSON.parse(raw)
-    return data._version === VERSION ? data : null
+    if (data._version !== VERSION) return null
+    // Fill fields added in later versions
+    if (!data.hiddenSkills) data.hiddenSkills = {}
+    if (!data.availability)  data.availability = ''
+    if (!data.softSkills)    data.softSkills = []
+    return data
   } catch {
     return null
   }
@@ -123,5 +128,6 @@ export function defaultResume() {
       { name: 'Anglais',   level: 'C1',                countryCode: 'GB' },
       { name: 'Allemand',  level: 'B1',                countryCode: 'DE' },
     ],
+    hiddenSkills: {},
   }
 }

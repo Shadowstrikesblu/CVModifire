@@ -62,6 +62,25 @@
 
       <!-- ── Accroche ── -->
       <div v-if="activeTab === 'summary'" class="section">
+        <button
+          class="btn-claude"
+          :class="{ loading: rewriteLoading }"
+          :disabled="rewriteLoading"
+          @click="$emit('rewrite-summary')"
+        >
+          <svg v-if="!rewriteLoading" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+          <svg v-else class="spin-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
+          <span v-if="rewriteLoading">Réécriture en cours…</span>
+          <span v-else-if="hasApiKey">✨ Réécrire avec Claude pour ce poste</span>
+          <span v-else>✨ Réécrire avec Claude — configurer la clé API ⚙️</span>
+        </button>
+
         <div class="field">
           <label>
             Résumé / Accroche
@@ -95,20 +114,73 @@
 
       <!-- ── Compétences techniques ── -->
       <div v-if="activeTab === 'skills'" class="section">
-        <p class="hint">Séparez les compétences par des virgules.</p>
-        <div v-for="cat in skillCats" :key="cat.key" class="field">
-          <label>
-            {{ cat.label }}
+
+        <!-- Job match summary -->
+        <div v-if="jobKeywords.length" class="match-summary">
+          <span class="match-summary-dot" />
+          <span>
+            <strong>{{ totalMatches }}</strong> compétence{{ totalMatches !== 1 ? 's' : '' }}
+            correspondent à cette offre —
+            cliquez sur un tag pour le masquer dans le CV
+          </span>
+        </div>
+        <p v-else class="hint">
+          Collez une offre d'emploi pour voir quelles compétences sont demandées.
+          Cliquez sur un tag pour le masquer du CV.
+        </p>
+
+        <!-- Chip legend -->
+        <div class="chip-legend">
+          <span class="chip chip-match chip-demo">Tag en offre</span>
+          <span class="chip chip-demo">Tag normal</span>
+          <span class="chip chip-hidden chip-demo">Tag masqué (clic)</span>
+        </div>
+
+        <!-- One row per category -->
+        <div v-for="cat in skillCats" :key="cat.key" class="skill-cat-block">
+          <div class="skill-cat-header">
+            <span class="skill-cat-label">{{ cat.label }}</span>
             <span v-if="matchedCount(cat.key)" class="match-badge">
               {{ matchedCount(cat.key) }} match
             </span>
-          </label>
-          <input
-            :value="getSkills(cat.key)"
-            @input="setSkills(cat.key, $event.target.value)"
-            :placeholder="cat.placeholder"
-          />
+          </div>
+          <div class="chips-row">
+            <template v-for="skill in getSkillsArr(cat.key)" :key="skill">
+              <span
+                class="chip"
+                :class="{
+                  'chip-match':   isMatch(skill) && !isHidden(cat.key, skill),
+                  'chip-hidden':  isHidden(cat.key, skill),
+                }"
+                :title="isHidden(cat.key, skill)
+                  ? 'Cliquer pour réafficher dans le CV'
+                  : isMatch(skill)
+                    ? 'Requis dans l\'offre — cliquer pour masquer'
+                    : 'Cliquer pour masquer du CV'"
+                @click="toggleHide(cat.key, skill)"
+              >
+                <span class="chip-match-dot" v-if="isMatch(skill) && !isHidden(cat.key, skill)" />
+                {{ skill }}
+                <button class="chip-x" @click.stop="removeSkill(cat.key, skill)" title="Supprimer">✕</button>
+              </span>
+            </template>
+
+            <!-- Add input -->
+            <span class="chip-add-wrap">
+              <input
+                class="chip-add-input"
+                v-model="newSkill[cat.key]"
+                :placeholder="cat.addHint"
+                @keydown.enter.prevent="addSkill(cat.key)"
+                @keydown.188.prevent="addSkill(cat.key)"
+              />
+            </span>
+          </div>
         </div>
+
+        <button v-if="hasHidden" class="reset-btn" @click="resetHidden">
+          ↺ Réafficher toutes les compétences masquées
+        </button>
       </div>
 
       <!-- ── Expériences ── -->
@@ -233,12 +305,16 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive, computed } from 'vue'
+import { skillMatchesKeyword } from '../utils/keywords.js'
 
 const props = defineProps({
   resume: Object,
   jobKeywords: { type: Array, default: () => [] },
+  hasApiKey: { type: Boolean, default: false },
+  rewriteLoading: { type: Boolean, default: false },
 })
+defineEmits(['rewrite-summary'])
 
 const activeTab = ref('personal')
 
@@ -254,28 +330,80 @@ const tabs = [
 ]
 
 const skillCats = [
-  { key: 'frontend',  label: 'FrontEnd',                  placeholder: 'React.js, Vue.js, TypeScript, HTML, CSS...' },
-  { key: 'backend',   label: 'Backend',                   placeholder: 'Node.js, Java, .NET, API REST...' },
-  { key: 'databases', label: 'Bases de données',          placeholder: 'PostgreSQL, MySQL, MongoDB...' },
-  { key: 'devops',    label: 'DevOps & Déploiement',      placeholder: 'Docker, Kubernetes, CI/CD, Git...' },
-  { key: 'tests',     label: 'Tests & Qualité',           placeholder: 'Jest, Cypress, Postman...' },
-  { key: 'cloud',     label: 'Cloud & Infrastructure',    placeholder: 'AWS, Azure, GCP...' },
-  { key: 'scripting', label: 'Scripting & Automatisation',placeholder: 'Python, Bash, PowerShell...' },
-  { key: 'methods',   label: 'Méthodes de travail',       placeholder: 'Agile/Scrum, TDD...' },
+  { key: 'frontend',  label: 'FrontEnd',                   addHint: 'React, Vue...' },
+  { key: 'backend',   label: 'Backend',                    addHint: 'Node.js, Java...' },
+  { key: 'databases', label: 'Bases de données',           addHint: 'PostgreSQL...' },
+  { key: 'devops',    label: 'DevOps & Déploiement',       addHint: 'Docker, K8s...' },
+  { key: 'tests',     label: 'Tests & Qualité',            addHint: 'Jest, Cypress...' },
+  { key: 'cloud',     label: 'Cloud & Infrastructure',     addHint: 'AWS, Azure...' },
+  { key: 'scripting', label: 'Scripting & Automatisation', addHint: 'Python, Bash...' },
+  { key: 'methods',   label: 'Méthodes de travail',        addHint: 'Scrum, TDD...' },
 ]
 
-function getSkills(cat) {
-  return (props.resume.skills?.[cat] || []).join(', ')
+// ── Chip helpers ──────────────────────────────────────────────
+const newSkill = reactive({})
+
+function getSkillsArr(cat) {
+  return props.resume.skills?.[cat] || []
 }
 
-function setSkills(cat, text) {
+function isMatch(skill) {
+  if (!props.jobKeywords.length) return false
+  return props.jobKeywords.some(kw => skillMatchesKeyword(skill, kw))
+}
+
+function isHidden(cat, skill) {
+  return (props.resume.hiddenSkills?.[cat] || []).includes(skill)
+}
+
+function toggleHide(cat, skill) {
+  if (!props.resume.hiddenSkills) props.resume.hiddenSkills = {}
+  if (!props.resume.hiddenSkills[cat]) props.resume.hiddenSkills[cat] = []
+  const idx = props.resume.hiddenSkills[cat].indexOf(skill)
+  if (idx === -1) props.resume.hiddenSkills[cat].push(skill)
+  else props.resume.hiddenSkills[cat].splice(idx, 1)
+}
+
+function removeSkill(cat, skill) {
+  if (!props.resume.skills?.[cat]) return
+  const idx = props.resume.skills[cat].indexOf(skill)
+  if (idx !== -1) props.resume.skills[cat].splice(idx, 1)
+  // also clean from hidden
+  if (props.resume.hiddenSkills?.[cat]) {
+    const hi = props.resume.hiddenSkills[cat].indexOf(skill)
+    if (hi !== -1) props.resume.hiddenSkills[cat].splice(hi, 1)
+  }
+}
+
+function addSkill(cat) {
+  const val = (newSkill[cat] || '').trim().replace(/,+$/, '')
+  if (!val) return
   if (!props.resume.skills) props.resume.skills = {}
-  props.resume.skills[cat] = text.split(',').map(s => s.trim()).filter(Boolean)
+  if (!props.resume.skills[cat]) props.resume.skills[cat] = []
+  if (!props.resume.skills[cat].includes(val)) {
+    props.resume.skills[cat].push(val)
+  }
+  newSkill[cat] = ''
 }
 
 function matchedCount(cat) {
-  const skills = (props.resume.skills?.[cat] || []).join(' ').toLowerCase()
-  return props.jobKeywords.filter(kw => skills.includes(kw.toLowerCase())).length
+  return getSkillsArr(cat).filter(s => isMatch(s)).length
+}
+
+const totalMatches = computed(() =>
+  skillCats.reduce((acc, cat) => acc + matchedCount(cat.key), 0)
+)
+
+const hasHidden = computed(() =>
+  props.resume.hiddenSkills &&
+  Object.values(props.resume.hiddenSkills).some(a => a.length > 0)
+)
+
+function resetHidden() {
+  if (!props.resume.hiddenSkills) return
+  Object.keys(props.resume.hiddenSkills).forEach(k => {
+    props.resume.hiddenSkills[k] = []
+  })
 }
 
 let nextId = 200
@@ -516,4 +644,199 @@ function addProj() {
   text-transform: uppercase;
   font-family: inherit;
 }
+
+/* ── Match summary ─────────────────────────────────────────── */
+.match-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--primary-light);
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  color: var(--primary);
+}
+
+.match-summary-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
+/* ── Chip legend ───────────────────────────────────────────── */
+.chip-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chip-demo { pointer-events: none; font-size: 11px !important; padding: 3px 8px !important; }
+
+/* ── Skill category block ──────────────────────────────────── */
+.skill-cat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skill-cat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skill-cat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ── Chips row ─────────────────────────────────────────────── */
+.chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.chip:hover:not(.chip-demo) {
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+
+/* Job-match chip */
+.chip-match {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+/* Hidden chip */
+.chip-hidden {
+  background: var(--bg) !important;
+  border-color: var(--border) !important;
+  color: var(--text-3) !important;
+  text-decoration: line-through;
+  opacity: 0.55;
+  font-weight: 400 !important;
+}
+
+.chip-match-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3b82f6;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.chip-x {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 9px;
+  color: var(--text-3);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+  line-height: 1;
+  transition: all 0.1s;
+}
+.chip-x:hover { background: #fee2e2; color: var(--danger); }
+
+/* Add-skill inline input */
+.chip-add-wrap {
+  display: inline-flex;
+}
+
+.chip-add-input {
+  padding: 4px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text);
+  background: transparent;
+  width: 90px;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.chip-add-input:focus {
+  border-color: var(--primary);
+  border-style: solid;
+  background: var(--surface);
+  width: 130px;
+  outline: none;
+}
+
+.chip-add-input::placeholder { color: var(--text-3); }
+
+/* Reset button */
+.reset-btn {
+  align-self: flex-start;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.reset-btn:hover { border-color: var(--warning); color: var(--warning); background: var(--warning-light); }
+
+/* ── Claude rewrite button ─────────────────────────────────── */
+.btn-claude {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 16px;
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+.btn-claude:hover:not(:disabled) { opacity: 0.9; }
+.btn-claude:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-claude.loading { background: #6b7280; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin-icon { animation: spin 0.8s linear infinite; }
 </style>

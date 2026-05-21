@@ -162,7 +162,9 @@ const skillCats = [
 ]
 
 function skillsOf(cat) {
-  return props.resume?.skills?.[cat] || []
+  const all    = props.resume?.skills?.[cat] || []
+  const hidden = props.resume?.hiddenSkills?.[cat] || []
+  return hidden.length ? all.filter(s => !hidden.includes(s)) : all
 }
 
 const hasSkills = computed(() => skillCats.some(c => skillsOf(c.key).length))

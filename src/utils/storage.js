@@ -8,10 +8,11 @@ export function loadResume() {
     const data = JSON.parse(raw)
     if (data._version !== VERSION) return null
     // Fill fields added in later versions
-    if (!data.hiddenSkills)     data.hiddenSkills = {}
-    if (!data.availability)     data.availability = ''
-    if (!data.softSkills)       data.softSkills = []
-    if (!data.customSkillCats)  data.customSkillCats = []
+    if (!data.hiddenSkills)          data.hiddenSkills = {}
+    if (!data.availability)          data.availability = ''
+    if (!data.softSkills)            data.softSkills = []
+    if (!data.customSkillCats)       data.customSkillCats = []
+    if (data.alternanceNote == null) data.alternanceNote = false
     return data
   } catch {
     return null
@@ -36,6 +37,7 @@ export function defaultResume() {
       github: 'github.com/Shadowstrikesblu',
     },
     availability: 'Immédiate',
+    alternanceNote: false,
     summary: "Étudiant en Master Cloud DevOps à l'Ecole des Technologies Numériques Avancées (ETNA) et titulaire d'un Master 2 en Cybersécurité, je recherche une alternance orientée DevOps, Cloud Azure et automatisation.\n\nJe possède 3 ans d'expérience cumulée en développement frontend et backend, intégration d'API, déploiement d'applications et automatisation. Curieux et autonome, j'apprécie les environnements techniques dynamiques nécessitant collaboration, résolution de problèmes et amélioration continue.",
     softSkills: ["Autonomie", "Curiosité technique", "Résolution de problèmes", "Travail en équipe", "Adaptabilité", "Esprit d'analyse"],
     skills: {

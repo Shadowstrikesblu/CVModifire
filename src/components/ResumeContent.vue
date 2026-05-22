@@ -36,6 +36,9 @@
       <div v-if="resume.availability" class="sb-section">
         <h3 class="sb-title-section">Disponibilité</h3>
         <p class="sb-avail">✅ {{ resume.availability }}</p>
+        <p v-if="resume.alternanceNote" class="sb-alternance">
+          33h de e-learning modulable / 1 vendredi sur 3 à l'ETNA
+        </p>
       </div>
 
       <!-- Soft Skills -->
@@ -275,6 +278,15 @@ function parseBullets(text) {
 
 /* Availability */
 .sb-avail { font-size: 8.5pt; color: #b8cce0; font-weight: 500; }
+
+/* Alternance note */
+.sb-alternance {
+  font-size: 7.8pt;
+  color: #8aaac8;
+  font-style: italic;
+  margin-top: 3px;
+  line-height: 1.4;
+}
 
 /* Soft skills */
 .sb-soft {

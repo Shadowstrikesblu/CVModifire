@@ -34,6 +34,13 @@
             <input v-model="resume.availability" placeholder="Immédiate" />
           </div>
         </div>
+        <label class="checkbox-row">
+          <input type="checkbox" v-model="resume.alternanceNote" />
+          <span>
+            Alternance
+            <span class="checkbox-hint">— ajoute « 33h de e-learning modulable / 1 vendredi sur 3 à l'ETNA »</span>
+          </span>
+        </label>
         <div class="field-grid">
           <div class="field">
             <label>Email</label>
@@ -671,6 +678,32 @@ function addProj() {
   font-family: inherit;
 }
 .add-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+/* Alternance checkbox */
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  margin-top: -4px;
+}
+
+.checkbox-row input[type="checkbox"] {
+  margin-top: 2px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.checkbox-hint {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
 
 /* Languages row */
 .lang-row {

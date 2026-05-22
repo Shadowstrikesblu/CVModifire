@@ -233,7 +233,11 @@
         <div v-for="(exp, i) in resume.experiences" :key="exp.id" class="card">
           <div class="card-header">
             <span class="card-num">{{ i + 1 }}</span>
-            <button class="remove-btn" @click="resume.experiences.splice(i, 1)" v-if="resume.experiences.length > 1">✕</button>
+            <div class="card-actions">
+              <button class="move-btn" :disabled="i === 0" @click="moveExp(i, -1)" title="Monter">↑</button>
+              <button class="move-btn" :disabled="i === resume.experiences.length - 1" @click="moveExp(i, 1)" title="Descendre">↓</button>
+              <button class="remove-btn" @click="resume.experiences.splice(i, 1)" v-if="resume.experiences.length > 1">✕</button>
+            </div>
           </div>
           <div class="field-grid">
             <div class="field">
@@ -484,6 +488,13 @@ function resetHidden() {
   })
 }
 
+function moveExp(i, dir) {
+  const j = i + dir
+  const arr = props.resume.experiences
+  if (j < 0 || j >= arr.length) return
+  ;[arr[i], arr[j]] = [arr[j], arr[i]]
+}
+
 let nextId = 200
 function addExp() {
   props.resume.experiences.push({ id: nextId++, position: '', company: '', period: '', bullets: '' })
@@ -650,6 +661,30 @@ function addProj() {
   align-items: center;
   justify-content: center;
 }
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.move-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
+  color: var(--text-3);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.move-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.move-btn:disabled { opacity: 0.25; cursor: not-allowed; }
 
 .remove-btn {
   font-size: 12px;

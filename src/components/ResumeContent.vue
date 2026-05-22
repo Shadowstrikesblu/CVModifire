@@ -63,6 +63,7 @@
         <h3 class="sb-title-section">Compétences Techniques</h3>
         <div class="sb-skills">
           <template v-for="cat in skillCats" :key="cat.key">
+
             <div v-if="skillsOf(cat.key).length" class="sb-skill-row">
               <span class="sb-skill-lbl">{{ cat.label }} :</span>
               <span class="sb-skill-val"> {{ skillsOf(cat.key).join(', ') }}.</span>
@@ -150,7 +151,7 @@ import { computed } from 'vue'
 
 const props = defineProps({ resume: Object })
 
-const skillCats = [
+const BASE_SKILL_CATS = [
   { key: 'frontend',  label: 'FrontEnd' },
   { key: 'backend',   label: 'Backend' },
   { key: 'databases', label: 'Bases de données' },
@@ -161,13 +162,18 @@ const skillCats = [
   { key: 'methods',   label: 'Méthodes de travail' },
 ]
 
+const skillCats = computed(() => [
+  ...BASE_SKILL_CATS,
+  ...(props.resume?.customSkillCats || []),
+])
+
 function skillsOf(cat) {
   const all    = props.resume?.skills?.[cat] || []
   const hidden = props.resume?.hiddenSkills?.[cat] || []
   return hidden.length ? all.filter(s => !hidden.includes(s)) : all
 }
 
-const hasSkills = computed(() => skillCats.some(c => skillsOf(c.key).length))
+const hasSkills = computed(() => skillCats.value.some(c => skillsOf(c.key).length))
 
 function toFlag(code) {
   if (!code || code.length !== 2) return ''

@@ -8,9 +8,10 @@ export function loadResume() {
     const data = JSON.parse(raw)
     if (data._version !== VERSION) return null
     // Fill fields added in later versions
-    if (!data.hiddenSkills) data.hiddenSkills = {}
-    if (!data.availability)  data.availability = ''
-    if (!data.softSkills)    data.softSkills = []
+    if (!data.hiddenSkills)     data.hiddenSkills = {}
+    if (!data.availability)     data.availability = ''
+    if (!data.softSkills)       data.softSkills = []
+    if (!data.customSkillCats)  data.customSkillCats = []
     return data
   } catch {
     return null
@@ -129,5 +130,6 @@ export function defaultResume() {
       { name: 'Allemand',  level: 'B1',                countryCode: 'DE' },
     ],
     hiddenSkills: {},
+    customSkillCats: [],
   }
 }

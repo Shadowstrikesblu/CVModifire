@@ -136,21 +136,36 @@
           <span class="chip chip-hidden chip-demo">Tag masqué (clic)</span>
         </div>
 
-        <!-- One row per category -->
-        <div v-for="cat in skillCats" :key="cat.key" class="skill-cat-block">
+        <!-- One row per category (predefined + custom) -->
+        <div v-for="cat in allSkillCats" :key="cat.key" class="skill-cat-block">
           <div class="skill-cat-header">
             <span class="skill-cat-label">{{ cat.label }}</span>
             <span v-if="matchedCount(cat.key)" class="match-badge">
               {{ matchedCount(cat.key) }} match
             </span>
+            <button
+              v-if="cat.isCustom"
+              class="delete-cat-btn"
+              @click="removeCustomCat(cat.key)"
+              title="Supprimer ce domaine"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14H6L5 6"/>
+                <path d="M10 11v6M14 11v6"/>
+                <path d="M9 6V4h6v2"/>
+              </svg>
+            </button>
           </div>
+
+          <!-- Chips -->
           <div class="chips-row">
             <template v-for="skill in getSkillsArr(cat.key)" :key="skill">
               <span
                 class="chip"
                 :class="{
-                  'chip-match':   isMatch(skill) && !isHidden(cat.key, skill),
-                  'chip-hidden':  isHidden(cat.key, skill),
+                  'chip-match':  isMatch(skill) && !isHidden(cat.key, skill),
+                  'chip-hidden': isHidden(cat.key, skill),
                 }"
                 :title="isHidden(cat.key, skill)
                   ? 'Cliquer pour réafficher dans le CV'
@@ -164,23 +179,46 @@
                 <button class="chip-x" @click.stop="removeSkill(cat.key, skill)" title="Supprimer">✕</button>
               </span>
             </template>
+          </div>
 
-            <!-- Add input -->
-            <span class="chip-add-wrap">
-              <input
-                class="chip-add-input"
-                v-model="newSkill[cat.key]"
-                :placeholder="cat.addHint"
-                @keydown.enter.prevent="addSkill(cat.key)"
-                @keydown.188.prevent="addSkill(cat.key)"
-              />
-            </span>
+          <!-- Add skill row -->
+          <div class="add-skill-row">
+            <input
+              class="add-skill-input"
+              v-model="newSkill[cat.key]"
+              :placeholder="`+ Ajouter : ${cat.addHint}`"
+              @keydown.enter.prevent="addSkill(cat.key)"
+              @keydown.188.prevent="addSkill(cat.key)"
+            />
+            <button
+              class="add-skill-btn"
+              @click="addSkill(cat.key)"
+              :disabled="!newSkill[cat.key]?.trim()"
+            >Ajouter</button>
           </div>
         </div>
 
         <button v-if="hasHidden" class="reset-btn" @click="resetHidden">
           ↺ Réafficher toutes les compétences masquées
         </button>
+
+        <!-- Add new category -->
+        <div class="new-cat-block">
+          <p class="new-cat-title">Ajouter un domaine personnalisé</p>
+          <div class="add-skill-row">
+            <input
+              class="add-skill-input"
+              v-model="newCatName"
+              placeholder="Ex : Certifications, Outils métier, IA / LLM…"
+              @keydown.enter.prevent="addCustomCat"
+            />
+            <button
+              class="add-skill-btn"
+              @click="addCustomCat"
+              :disabled="!newCatName.trim()"
+            >Créer</button>
+          </div>
+        </div>
       </div>
 
       <!-- ── Expériences ── -->
@@ -339,6 +377,39 @@ const skillCats = [
   { key: 'scripting', label: 'Scripting & Automatisation', addHint: 'Python, Bash...' },
   { key: 'methods',   label: 'Méthodes de travail',        addHint: 'Scrum, TDD...' },
 ]
+
+// ── Skill categories (predefined + custom) ────────────────────
+const allSkillCats = computed(() => [
+  ...skillCats,
+  ...(props.resume.customSkillCats || []).map(c => ({
+    key: c.key,
+    label: c.label,
+    addHint: c.label + '…',
+    isCustom: true,
+  })),
+])
+
+// ── Custom category management ────────────────────────────────
+const newCatName = ref('')
+
+function addCustomCat() {
+  const label = newCatName.value.trim()
+  if (!label) return
+  const key = 'custom_' + label.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_')
+  if (!props.resume.customSkillCats) props.resume.customSkillCats = []
+  if (props.resume.customSkillCats.some(c => c.key === key)) return
+  props.resume.customSkillCats.push({ key, label })
+  if (!props.resume.skills) props.resume.skills = {}
+  props.resume.skills[key] = []
+  newCatName.value = ''
+}
+
+function removeCustomCat(key) {
+  const idx = (props.resume.customSkillCats || []).findIndex(c => c.key === key)
+  if (idx !== -1) props.resume.customSkillCats.splice(idx, 1)
+  if (props.resume.skills?.[key]) delete props.resume.skills[key]
+  if (props.resume.hiddenSkills?.[key]) delete props.resume.hiddenSkills[key]
+}
 
 // ── Chip helpers ──────────────────────────────────────────────
 const newSkill = reactive({})
@@ -772,32 +843,50 @@ function addProj() {
 }
 .chip-x:hover { background: #fee2e2; color: var(--danger); }
 
-/* Add-skill inline input */
-.chip-add-wrap {
-  display: inline-flex;
+/* Add skill row */
+.add-skill-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
 }
 
-.chip-add-input {
-  padding: 4px 10px;
-  border: 1px dashed var(--border);
-  border-radius: 20px;
-  font-size: 12px;
+.add-skill-input {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12.5px;
   color: var(--text);
-  background: transparent;
-  width: 90px;
-  transition: all 0.15s;
+  background: var(--surface-2);
   font-family: inherit;
+  transition: border-color 0.15s, background 0.15s;
 }
-
-.chip-add-input:focus {
+.add-skill-input:focus {
   border-color: var(--primary);
-  border-style: solid;
   background: var(--surface);
-  width: 130px;
   outline: none;
 }
+.add-skill-input::placeholder { color: var(--text-3); }
 
-.chip-add-input::placeholder { color: var(--text-3); }
+.add-skill-btn {
+  padding: 0 14px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.add-skill-btn:hover:not(:disabled) {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.add-skill-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Reset button */
 .reset-btn {
@@ -814,6 +903,39 @@ function addProj() {
   transition: all 0.15s;
 }
 .reset-btn:hover { border-color: var(--warning); color: var(--warning); background: var(--warning-light); }
+
+/* ── Delete custom category ────────────────────────────────── */
+.delete-cat-btn {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding: 3px 5px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.delete-cat-btn:hover { background: #fee2e2; color: var(--danger); }
+
+/* ── New category block ─────────────────────────────────────── */
+.new-cat-block {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.new-cat-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
 
 /* ── Claude rewrite button ─────────────────────────────────── */
 .btn-claude {

@@ -63,7 +63,6 @@
         <h3 class="sb-title-section">Compétences Techniques</h3>
         <div class="sb-skills">
           <template v-for="cat in skillCats" :key="cat.key">
-
             <div v-if="skillsOf(cat.key).length" class="sb-skill-row">
               <span class="sb-skill-lbl">{{ cat.label }} :</span>
               <span class="sb-skill-val"> {{ skillsOf(cat.key).join(', ') }}.</span>

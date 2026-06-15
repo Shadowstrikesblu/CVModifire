@@ -140,6 +140,7 @@ function addSkillFromJob(kw) {
 
 // ── ADAPT TO JOB ─────────────────────────────────────────────────
 const ROLE_TITLES = {
+  SysAdmin:     'Administrateur Systèmes & Réseaux',
   DevOps:       'Ingénieur DevOps',
   FullStack:    'Développeur Full Stack',
   Frontend:     'Développeur Frontend',

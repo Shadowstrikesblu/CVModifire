@@ -19,6 +19,7 @@ const CONTRACT_TYPES = [
 
 const ROLES = [
   { label: 'Support',       patterns: [/technicien support/i, /support logiciel/i, /support technique/i, /helpdesk/i, /help.desk/i, /support informatique/i, /technicien informatique/i, /support n[12]/i, /niveau [12]/i] },
+  { label: 'SysAdmin',      patterns: [/administrateur.{0,15}syst[eè]me/i, /administrateur.{0,15}r[eé]seau/i, /admin.{0,5}sys/i, /sysadmin/i, /ingénieur.{0,15}syst[eè]me/i, /technicien.{0,15}syst[eè]me/i, /exploitation.{0,25}infrastructure/i, /infrastructure.{0,25}syst[eè]me/i, /gestion.{0,20}parc/i, /\badsys\b/i] },
   { label: 'DevOps',        patterns: [/devops/i, /site reliability/i, /\bsre\b/i, /kubernetes/i, /\bk8s\b/i, /intégration continue/i] },
   { label: 'FullStack',     patterns: [/full.?stack/i] },
   { label: 'Frontend',      patterns: [/front.?end/i, /intégrat(eur|rice)/i, /développeur.*front/i] },
@@ -28,7 +29,7 @@ const ROLES = [
   { label: 'Mobile',        patterns: [/développeur mobile/i, /mobile developer/i, /\biOS\b/i, /\bandroid\b/i, /react native/i, /flutter/i] },
   { label: 'Cybersecurity', patterns: [/cybersécurité/i, /cybersecurity/i, /pentester/i, /analyste.*sécurité/i, /\bSOC\b/] },
   { label: 'CloudEngineer', patterns: [/cloud engineer/i, /ingénieur cloud/i, /architecte cloud/i] },
-  { label: 'Dev',           patterns: [/développeur/i, /developer/i, /ingénieur.*logiciel/i, /software engineer/i, /développement/i, /programmeur/i] },
+  { label: 'Dev',           patterns: [/développeur/i, /developer/i, /ingénieur.*logiciel/i, /software engineer/i, /programmeur/i] },
 ]
 
 const TECH_KEYWORDS = [
@@ -53,6 +54,10 @@ const TECH_KEYWORDS = [
   // ── Support / ITSM ──
   'ITSM', 'ServiceNow', 'GLPI', 'Active Directory', 'VPN', 'LDAP',
   'Office 365', 'Windows Server', 'PowerShell', 'Bash',
+  // ── Sysadmin / Infra ──
+  'VMware', 'Hyper-V', 'DNS', 'DHCP', 'GPO', 'WSUS', 'Veeam',
+  'Zabbix', 'Nagios', 'SNMP', 'NFS', 'RAID', 'Exchange',
+  'Virtualisation', 'Scripting',
   // ── Pratiques ──
   'Agile', 'Agilité', 'Scrum', 'CI/CD', 'TDD', 'BDD', 'Microservices', 'API',
   'Recette', 'Tickets',

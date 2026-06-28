@@ -94,7 +94,8 @@ function buildSidebar(resume) {
   if (resume.availability) {
     const av = [{ text: resume.availability, fontSize: 8, bold: true, color: C.sideTxt }]
     if (resume.alternanceNote) {
-      av.push({ text: "33h e-learning / 1 ven. sur 3 à l'ETNA", fontSize: 7, italics: true, color: C.sideDim, margin: [0, 2, 0, 0] })
+      const dur = resume.alternanceDuration === '24' ? '2 ans' : resume.alternanceDuration === '36' ? '3 ans' : '1 an'
+      av.push({ text: `33h e-learning / 1 ven. sur 3 à l'ETNA — ${dur}`, fontSize: 7, italics: true, color: C.sideDim, margin: [0, 2, 0, 0] })
     }
     out.push(...sbSection('Disponibilité', av))
   }
@@ -244,5 +245,19 @@ export async function exportPdfText(resume, filename) {
     }],
   }
 
-  pdfMake.createPdf(docDef).download(filename)
+  const blob = await new Promise((resolve, reject) => {
+    try {
+      pdfMake.createPdf(docDef).getBlob(resolve)
+    } catch (e) {
+      reject(e)
+    }
+  })
+  const url = URL.createObjectURL(blob)
+  const a   = document.createElement('a')
+  a.href     = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }

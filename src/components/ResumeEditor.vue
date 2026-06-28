@@ -41,6 +41,14 @@
             <span class="checkbox-hint">— ajoute « 33h de e-learning modulable / 1 vendredi sur 3 à l'ETNA »</span>
           </span>
         </label>
+        <div v-if="resume.alternanceNote" class="field alternance-duration-field">
+          <label>Durée souhaitée</label>
+          <select v-model="resume.alternanceDuration">
+            <option value="12">1 an</option>
+            <option value="24">2 ans</option>
+            <option value="36">3 ans</option>
+          </select>
+        </div>
         <div class="field-grid">
           <div class="field">
             <label>Email</label>
@@ -738,6 +746,11 @@ function addProj() {
 .checkbox-hint {
   font-size: 11.5px;
   color: var(--text-3);
+}
+
+.alternance-duration-field {
+  margin-top: 6px;
+  margin-left: 22px;
 }
 
 /* Languages row */

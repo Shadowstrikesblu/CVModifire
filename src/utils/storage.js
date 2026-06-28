@@ -13,7 +13,8 @@ export function loadResume() {
     if (!data.availability)          data.availability = ''
     if (!data.softSkills)            data.softSkills = []
     if (!data.customSkillCats)       data.customSkillCats = []
-    if (data.alternanceNote == null) data.alternanceNote = false
+    if (data.alternanceNote == null)    data.alternanceNote    = false
+    if (!data.alternanceDuration)       data.alternanceDuration = '12'
     return data
   } catch {
     return null
@@ -39,6 +40,7 @@ export function defaultResume() {
     },
     availability: 'Disponible dès avril 2026',
     alternanceNote: false,
+    alternanceDuration: '12',
     summary: "En Master 1 Cloud DevOps à l'ETNA et titulaire d'un Master 2 en Cybersécurité, je cible une alternance DevOps / Cloud (Azure, AWS) axée sur l'automatisation et l'infrastructure.\n\n3 ans d'expérience en déploiement d'applications, mise en place de pipelines CI/CD et scripting (Python, Bash, PowerShell). A l'aise avec Docker, les environnements VPS Windows/IIS et les tests automatisés. Force de proposition, curieux des pratiques IaC (Terraform, Ansible) et des architectures cloud modernes.",
     softSkills: ["Autonomie", "Force de proposition", "Curiosité technique", "Rigueur analytique", "Résolution de problèmes", "Travail en équipe", "Adaptabilité"],
     skills: {

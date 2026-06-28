@@ -38,6 +38,9 @@
         <p class="sb-avail">✅ {{ resume.availability }}</p>
         <p v-if="resume.alternanceNote" class="sb-alternance">
           33h de e-learning modulable / 1 vendredi sur 3 à l'ETNA
+          <template v-if="resume.alternanceDuration">
+            — {{ resume.alternanceDuration === '12' ? '1 an' : resume.alternanceDuration === '24' ? '2 ans' : '3 ans' }}
+          </template>
         </p>
       </div>
 

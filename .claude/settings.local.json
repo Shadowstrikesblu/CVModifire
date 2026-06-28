@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\hmoul\\\\ETNA\\\\THREE\\\\CVModifire\" -ErrorAction SilentlyContinue; if \\(-not \\(Test-Path \"c:\\\\Users\\\\hmoul\\\\ETNA\\\\THREE\\\\CVModifire\"\\)\\) { Write-Output \"Directory does not exist\" })"
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\hmoul\\\\ETNA\\\\THREE\\\\CVModifire\" -ErrorAction SilentlyContinue; if \\(-not \\(Test-Path \"c:\\\\Users\\\\hmoul\\\\ETNA\\\\THREE\\\\CVModifire\"\\)\\) { Write-Output \"Directory does not exist\" })",
+      "Bash(npm run *)"
     ]
   }
 }

@@ -198,6 +198,8 @@ function parseBullets(text) {
   display: flex;
   width: 210mm;
   min-height: 297mm;
+  max-height: 297mm;
+  overflow: hidden;
   font-family: 'Inter', Arial, Helvetica, sans-serif;
   font-size: 9.2pt;
   line-height: 1.45;

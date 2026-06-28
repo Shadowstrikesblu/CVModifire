@@ -116,4 +116,11 @@ defineExpose({ pdfRef })
   pointer-events: none;
   visibility: hidden;
 }
+
+/* Strict A4 height for the render target — avoids html2pdf blank second page */
+.pdf-target .resume-page {
+  min-height: unset;
+  height: 297mm;
+  overflow: hidden;
+}
 </style>

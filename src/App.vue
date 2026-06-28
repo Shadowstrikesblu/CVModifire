@@ -37,9 +37,6 @@
     <SettingsPanel v-if="showSettings" v-model="apiKey" @close="showSettings = false" />
   </Teleport>
 
-  <!-- Hidden PDF render target -->
-  <ResumePreview ref="previewRef" :resume="resume" />
-
   <!-- Toast -->
   <Teleport to="body">
     <div v-if="toast" class="toast" :class="toast.type">
@@ -65,6 +62,7 @@ import ResumePreview  from './components/ResumePreview.vue'
 import SettingsPanel  from './components/SettingsPanel.vue'
 import { analyzeJob, generateFilename, skillMatchesKeyword } from './utils/keywords.js'
 import { loadResume, saveResume, defaultResume } from './utils/storage.js'
+import { exportPdfText } from './utils/pdfExport.js'
 
 // ── Core state ──────────────────────────────────────────────────
 const jobText      = ref('')
@@ -72,7 +70,6 @@ const showPreview  = ref(false)
 const showSettings = ref(false)
 const exporting    = ref(false)
 const rewriteLoading = ref(false)
-const previewRef   = ref(null)
 const toast        = ref(null)
 
 const resume = reactive(loadResume() || defaultResume())
@@ -289,22 +286,8 @@ async function exportPdf() {
   if (exporting.value) return
   exporting.value = true
   try {
-    const html2pdf = (await import('html2pdf.js')).default
-    const el = previewRef.value?.pdfRef
-    if (!el) { showToast('Erreur : élément introuvable', 'error'); return }
-
     const fname = filename.value || 'CV.pdf'
-    await html2pdf()
-      .set({
-        margin: 0,
-        filename: fname,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-      })
-      .from(el)
-      .save()
+    await exportPdfText(resume, fname)
     showToast(`Exporté : ${fname}`, 'success')
   } catch (err) {
     console.error(err)

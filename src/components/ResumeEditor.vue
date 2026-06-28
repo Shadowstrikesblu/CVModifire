@@ -361,16 +361,39 @@
       <div v-if="activeTab === 'auto'" class="section auto-section">
 
         <div class="auto-intro">
-          <p>Colle l'URL d'une offre d'emploi. Mistral analysera l'annonce et adaptera automatiquement le titre, l'accroche et les compétences de ton CV.</p>
+          <p>Analyse une offre d'emploi via son URL ou en collant son texte. Mistral adaptera automatiquement le titre, l'accroche et les compétences de ton CV.</p>
         </div>
 
-        <div class="field">
+        <div class="auto-mode-toggle">
+          <button
+            class="mode-btn"
+            :class="{ active: autoMode === 'url' }"
+            @click="autoMode = 'url'"
+          >🔗 URL</button>
+          <button
+            class="mode-btn"
+            :class="{ active: autoMode === 'text' }"
+            @click="autoMode = 'text'"
+          >📋 Coller le texte</button>
+        </div>
+
+        <div v-if="autoMode === 'url'" class="field">
           <label>Lien de l'annonce</label>
           <input
             v-model="autoUrl"
             placeholder="https://www.linkedin.com/jobs/view/..."
             class="auto-url-input"
             @keydown.enter="runAuto"
+          />
+        </div>
+
+        <div v-else class="field">
+          <label>Texte de l'annonce</label>
+          <textarea
+            v-model="autoText"
+            placeholder="Colle ici le texte complet de l'offre d'emploi…"
+            class="auto-textarea"
+            rows="10"
           />
         </div>
 
@@ -383,7 +406,7 @@
 
         <button
           class="btn-auto"
-          :disabled="!autoUrl.trim() || !props.mistralKey || autoLoading"
+          :disabled="!(autoMode === 'url' ? autoUrl.trim() : autoText.trim()) || !props.mistralKey || autoLoading"
           @click="runAuto"
         >
           <svg v-if="autoLoading" class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -562,19 +585,28 @@ function moveExp(i, dir) {
 }
 
 // ── Onglet Automatique ──────────────────────────────────────────
+const autoMode    = ref('url')
 const autoUrl     = ref('')
+const autoText    = ref('')
 const autoLoading = ref(false)
 const autoError   = ref('')
 const autoResult  = ref(null)
 
 async function runAuto() {
-  if (!autoUrl.value.trim() || !props.mistralKey) return
+  if (!props.mistralKey) return
   autoLoading.value = true
   autoError.value   = ''
   autoResult.value  = null
   try {
-    const jobText = await fetchJobText(autoUrl.value.trim())
-    autoResult.value = await adaptCvWithMistral(jobText, props.resume, props.mistralKey)
+    let jobContent
+    if (autoMode.value === 'url') {
+      if (!autoUrl.value.trim()) return
+      jobContent = await fetchJobText(autoUrl.value.trim())
+    } else {
+      if (!autoText.value.trim()) return
+      jobContent = autoText.value.trim().slice(0, 4000)
+    }
+    autoResult.value = await adaptCvWithMistral(jobContent, props.resume, props.mistralKey)
   } catch (e) {
     autoError.value = e.message || 'Erreur inconnue'
   } finally {
@@ -854,7 +886,52 @@ function addProj() {
   margin: 0;
 }
 
+.auto-mode-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px;
+  align-self: flex-start;
+}
+
+.mode-btn {
+  padding: 5px 14px;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mode-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
 .auto-url-input { font-family: monospace; font-size: 12px; }
+
+.auto-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 160px;
+  font-size: 12.5px;
+  font-family: inherit;
+  line-height: 1.55;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.auto-textarea:focus { border-color: var(--primary); outline: none; }
 
 .auto-no-key {
   display: flex;

@@ -33,14 +33,17 @@
       </div>
 
       <!-- Disponibilité -->
-      <div v-if="resume.availability" class="sb-section">
+      <div v-if="resume.availability || resume.contractType" class="sb-section">
         <h3 class="sb-title-section">Disponibilité</h3>
-        <p class="sb-avail">✅ {{ resume.availability }}</p>
-        <p v-if="resume.alternanceNote" class="sb-alternance">
-          33h de e-learning modulable / 1 vendredi sur 3 à l'ETNA
-          <template v-if="resume.alternanceDuration">
-            — {{ resume.alternanceDuration === '12' ? '1 an' : resume.alternanceDuration === '24' ? '2 ans' : '3 ans' }}
+        <p v-if="resume.availability" class="sb-avail">✅ {{ resume.availability }}</p>
+        <p v-if="resume.contractType" class="sb-contract-type">
+          {{ { cdi: 'CDI', cdd: 'CDD', alternance: 'Alternance' }[resume.contractType] }}
+          <template v-if="resume.contractType !== 'cdi' && resume.contractDuration">
+            — {{ contractDurationLabel(resume.contractType, resume.contractDuration) }}
           </template>
+        </p>
+        <p v-if="resume.alternanceNote && resume.contractType === 'alternance'" class="sb-alternance">
+          33h de e-learning modulable / 1 vendredi sur 3 à l'ETNA
         </p>
       </div>
 
@@ -187,6 +190,13 @@ function toFlag(code) {
   ).join('')
 }
 
+function contractDurationLabel(type, dur) {
+  if (type === 'alternance') {
+    return dur === '36' ? '3 ans' : dur === '24' ? '2 ans' : '1 an'
+  }
+  return parseInt(dur) <= 1 ? '1 mois' : `${dur} mois`
+}
+
 function parseBullets(text) {
   if (!text) return []
   return text.split('\n')
@@ -283,6 +293,13 @@ function parseBullets(text) {
 
 /* Availability */
 .sb-avail { font-size: 8.5pt; color: #b8cce0; font-weight: 500; }
+
+.sb-contract-type {
+  font-size: 8.5pt;
+  color: #b8cce0;
+  font-weight: 600;
+  margin-top: 2px;
+}
 
 /* Alternance note */
 .sb-alternance {

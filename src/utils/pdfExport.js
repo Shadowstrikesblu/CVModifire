@@ -98,11 +98,24 @@ function buildSidebar(resume) {
   ].filter(Boolean).map(txt => ({ text: txt, fontSize: 7.5, color: C.sideTxt, margin: [0, 0, 0, 2] }))
   if (contactItems.length) out.push(...sbSection('Contact', contactItems))
 
-  if (resume.availability) {
-    const av = [{ text: resume.availability, fontSize: 8, bold: true, color: C.sideTxt }]
-    if (resume.alternanceNote) {
-      const dur = resume.alternanceDuration === '24' ? '2 ans' : resume.alternanceDuration === '36' ? '3 ans' : '1 an'
-      av.push({ text: `33h e-learning / 1 ven. sur 3 à l'ETNA — ${dur}`, fontSize: 7, italics: true, color: C.sideDim, margin: [0, 2, 0, 0] })
+  if (resume.availability || resume.contractType) {
+    const av = []
+    if (resume.availability) {
+      av.push({ text: resume.availability, fontSize: 8, bold: true, color: C.sideTxt })
+    }
+    if (resume.contractType) {
+      const typeLabel = { cdi: 'CDI', cdd: 'CDD', alternance: 'Alternance' }[resume.contractType] || ''
+      let contractLine = typeLabel
+      if (resume.contractType !== 'cdi' && resume.contractDuration) {
+        const dur = resume.contractType === 'alternance'
+          ? (resume.contractDuration === '36' ? '3 ans' : resume.contractDuration === '24' ? '2 ans' : '1 an')
+          : (parseInt(resume.contractDuration) <= 1 ? '1 mois' : `${resume.contractDuration} mois`)
+        contractLine += ` — ${dur}`
+      }
+      av.push({ text: contractLine, fontSize: 8, bold: true, color: C.sideTxt, margin: [0, 2, 0, 0] })
+    }
+    if (resume.alternanceNote && resume.contractType === 'alternance') {
+      av.push({ text: "33h e-learning / 1 ven. sur 3 à l'ETNA", fontSize: 7, italics: true, color: C.sideDim, margin: [0, 2, 0, 0] })
     }
     out.push(...sbSection('Disponibilité', av))
   }

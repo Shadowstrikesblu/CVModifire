@@ -34,21 +34,44 @@
             <input v-model="resume.availability" placeholder="Immédiate" />
           </div>
         </div>
-        <label class="checkbox-row">
+        <div class="field">
+          <label>Type de contrat</label>
+          <div class="contract-type-row">
+            <label v-for="opt in contractOptions" :key="opt.value" class="radio-option">
+              <input type="radio" v-model="resume.contractType" :value="opt.value" />
+              {{ opt.label }}
+            </label>
+          </div>
+        </div>
+
+        <div v-if="resume.contractType === 'cdd' || resume.contractType === 'alternance'" class="field">
+          <label>Durée souhaitée</label>
+          <select v-model="resume.contractDuration">
+            <template v-if="resume.contractType === 'alternance'">
+              <option value="12">1 an</option>
+              <option value="24">2 ans</option>
+              <option value="36">3 ans</option>
+            </template>
+            <template v-else>
+              <option value="1">1 mois</option>
+              <option value="2">2 mois</option>
+              <option value="3">3 mois</option>
+              <option value="6">6 mois</option>
+              <option value="9">9 mois</option>
+              <option value="12">12 mois</option>
+              <option value="18">18 mois</option>
+              <option value="24">24 mois</option>
+            </template>
+          </select>
+        </div>
+
+        <label v-if="resume.contractType === 'alternance'" class="checkbox-row">
           <input type="checkbox" v-model="resume.alternanceNote" />
           <span>
-            Alternance
+            Note ETNA
             <span class="checkbox-hint">— ajoute « 33h de e-learning modulable / 1 vendredi sur 3 à l'ETNA »</span>
           </span>
         </label>
-        <div v-if="resume.alternanceNote" class="field alternance-duration-field">
-          <label>Durée souhaitée</label>
-          <select v-model="resume.alternanceDuration">
-            <option value="12">1 an</option>
-            <option value="24">2 ans</option>
-            <option value="36">3 ans</option>
-          </select>
-        </div>
         <div class="field-grid">
           <div class="field">
             <label>Email</label>
@@ -454,6 +477,12 @@ const props = defineProps({
 defineEmits(['rewrite-summary'])
 
 const activeTab = ref('personal')
+
+const contractOptions = [
+  { value: 'cdi',       label: 'CDI' },
+  { value: 'cdd',       label: 'CDD' },
+  { value: 'alternance', label: 'Alternance' },
+]
 
 const tabs = [
   { id: 'personal',   label: 'Infos' },
@@ -871,9 +900,36 @@ function addProj() {
   color: var(--text-3);
 }
 
-.alternance-duration-field {
-  margin-top: 6px;
-  margin-left: 22px;
+.contract-type-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  color: var(--text-2);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s;
+}
+.radio-option:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--primary-light, #eff6ff);
+  color: var(--primary);
+  font-weight: 600;
+}
+.radio-option input[type="radio"] {
+  accent-color: var(--primary);
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
 }
 
 /* ── Onglet Automatique ─── */

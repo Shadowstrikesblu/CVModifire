@@ -26,6 +26,7 @@
         :job-keywords="jobAnalysis.keywords"
         :has-api-key="!!apiKey"
         :rewrite-loading="rewriteLoading"
+        :mistral-key="mistralKey"
         @rewrite-summary="rewriteSummary"
       />
     </div>
@@ -34,7 +35,7 @@
   <!-- Modals -->
   <Teleport to="body">
     <ResumePreview v-if="showPreview" :resume="resume" :modal="true" @close="showPreview = false" />
-    <SettingsPanel v-if="showSettings" v-model="apiKey" :version="STORAGE_VERSION" @close="showSettings = false" @reset="resetResume" />
+    <SettingsPanel v-if="showSettings" v-model="apiKey" v-model:mistral-key="mistralKey" :version="STORAGE_VERSION" @close="showSettings = false" @reset="resetResume" />
   </Teleport>
 
   <!-- Toast -->
@@ -75,9 +76,11 @@ const toast        = ref(null)
 const resume = reactive(loadResume() || defaultResume())
 watch(resume, () => saveResume(resume), { deep: true })
 
-// API key (localStorage, never sent anywhere except Anthropic)
-const apiKey = ref(localStorage.getItem('cvmodifire_apikey') || '')
-watch(apiKey, val => localStorage.setItem('cvmodifire_apikey', val))
+// API keys (localStorage only)
+const apiKey    = ref(localStorage.getItem('cvmodifire_apikey')    || '')
+const mistralKey = ref(localStorage.getItem('cvmodifire_mistralkey') || '')
+watch(apiKey,    val => localStorage.setItem('cvmodifire_apikey',    val))
+watch(mistralKey, val => localStorage.setItem('cvmodifire_mistralkey', val))
 
 // ── Job analysis ────────────────────────────────────────────────
 const jobAnalysis = computed(() => analyzeJob(jobText.value))

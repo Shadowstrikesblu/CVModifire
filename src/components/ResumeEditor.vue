@@ -357,6 +357,61 @@
         </button>
       </div>
 
+      <!-- ── Automatique ── -->
+      <div v-if="activeTab === 'auto'" class="section auto-section">
+
+        <div class="auto-intro">
+          <p>Colle l'URL d'une offre d'emploi. Mistral analysera l'annonce et adaptera automatiquement le titre, l'accroche et les compétences de ton CV.</p>
+        </div>
+
+        <div class="field">
+          <label>Lien de l'annonce</label>
+          <input
+            v-model="autoUrl"
+            placeholder="https://www.linkedin.com/jobs/view/..."
+            class="auto-url-input"
+            @keydown.enter="runAuto"
+          />
+        </div>
+
+        <div v-if="!props.mistralKey" class="auto-no-key">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Clé API Mistral manquante — configurez-la dans les Paramètres ⚙️
+        </div>
+
+        <button
+          class="btn-auto"
+          :disabled="!autoUrl.trim() || !props.mistralKey || autoLoading"
+          @click="runAuto"
+        >
+          <svg v-if="autoLoading" class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          </svg>
+          {{ autoLoading ? 'Analyse en cours…' : '✦ Analyser et adapter le CV' }}
+        </button>
+
+        <div v-if="autoError" class="auto-error">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ autoError }}
+        </div>
+
+        <div v-if="autoResult" class="auto-result">
+          <div class="auto-result-header">Modifications proposées</div>
+          <ul class="auto-changes">
+            <li v-for="c in autoResult.changes" :key="c">{{ c }}</li>
+          </ul>
+          <div class="auto-actions">
+            <button class="btn-apply" @click="applyAuto">Appliquer au CV</button>
+            <button class="btn-discard" @click="autoResult = null">Ignorer</button>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </div>
 </template>
@@ -364,12 +419,14 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { skillMatchesKeyword } from '../utils/keywords.js'
+import { fetchJobText, adaptCvWithMistral } from '../utils/mistralAdapt.js'
 
 const props = defineProps({
-  resume: Object,
-  jobKeywords: { type: Array, default: () => [] },
-  hasApiKey: { type: Boolean, default: false },
+  resume:         Object,
+  jobKeywords:    { type: Array,   default: () => [] },
+  hasApiKey:      { type: Boolean, default: false },
   rewriteLoading: { type: Boolean, default: false },
+  mistralKey:     { type: String,  default: '' },
 })
 defineEmits(['rewrite-summary'])
 
@@ -384,6 +441,7 @@ const tabs = [
   { id: 'education',  label: 'Formation' },
   { id: 'projects',   label: 'Projets' },
   { id: 'languages',  label: 'Langues' },
+  { id: 'auto',       label: '✦ Automatique' },
 ]
 
 const skillCats = [
@@ -501,6 +559,39 @@ function moveExp(i, dir) {
   const arr = props.resume.experiences
   if (j < 0 || j >= arr.length) return
   ;[arr[i], arr[j]] = [arr[j], arr[i]]
+}
+
+// ── Onglet Automatique ──────────────────────────────────────────
+const autoUrl     = ref('')
+const autoLoading = ref(false)
+const autoError   = ref('')
+const autoResult  = ref(null)
+
+async function runAuto() {
+  if (!autoUrl.value.trim() || !props.mistralKey) return
+  autoLoading.value = true
+  autoError.value   = ''
+  autoResult.value  = null
+  try {
+    const jobText = await fetchJobText(autoUrl.value.trim())
+    autoResult.value = await adaptCvWithMistral(jobText, props.resume, props.mistralKey)
+  } catch (e) {
+    autoError.value = e.message || 'Erreur inconnue'
+  } finally {
+    autoLoading.value = false
+  }
+}
+
+function applyAuto() {
+  const r = autoResult.value
+  if (!r) return
+  if (r.title)   props.resume.personal.title = r.title
+  if (r.summary) props.resume.summary = r.summary
+  if (r.hiddenSkills && typeof r.hiddenSkills === 'object') {
+    if (!props.resume.hiddenSkills) props.resume.hiddenSkills = {}
+    Object.assign(props.resume.hiddenSkills, r.hiddenSkills)
+  }
+  autoResult.value = null
 }
 
 let nextId = 200
@@ -752,6 +843,141 @@ function addProj() {
   margin-top: 6px;
   margin-left: 22px;
 }
+
+/* ── Onglet Automatique ─── */
+.auto-section { gap: 14px; }
+
+.auto-intro p {
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.auto-url-input { font-family: monospace; font-size: 12px; }
+
+.auto-no-key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius);
+  padding: 8px 12px;
+}
+
+.btn-auto {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, #1e3a5f, #2563eb);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  align-self: flex-start;
+}
+.btn-auto:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-auto:not(:disabled):hover { opacity: 0.88; }
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.auto-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  color: #be123c;
+  background: #fff1f2;
+  border: 1px solid #fda4af;
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  line-height: 1.5;
+}
+
+.auto-result {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auto-result-header {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.auto-changes {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0;
+  margin: 0;
+}
+.auto-changes li {
+  font-size: 12.5px;
+  color: var(--text-2);
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.5;
+}
+.auto-changes li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--success, #16a34a);
+  font-size: 11px;
+}
+
+.auto-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.btn-apply {
+  padding: 7px 16px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-apply:hover { background: var(--primary-hover); }
+
+.btn-discard {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-discard:hover { border-color: var(--border-hover); }
 
 /* Languages row */
 .lang-row {

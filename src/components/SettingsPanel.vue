@@ -71,11 +71,48 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
               </svg>
-              Modèle utilisé
+              Clé API Mistral
             </div>
             <p class="section-desc">
-              <code>claude-haiku-4-5</code> — rapide et économique pour la rédaction d'accroches.
-              ~$0.0003 par réécriture.
+              Nécessaire pour l'onglet <strong>Automatique</strong> — analyse d'annonce et adaptation complète du CV.
+              Ta clé reste dans ton navigateur.
+            </p>
+            <div class="field">
+              <label>Clé API Mistral</label>
+              <div class="key-wrap">
+                <input
+                  :type="showMistralKey ? 'text' : 'password'"
+                  :value="mistralKey"
+                  @input="$emit('update:mistralKey', $event.target.value)"
+                  placeholder="..."
+                  spellcheck="false"
+                  class="key-input"
+                />
+                <button class="toggle-btn" @click="showMistralKey = !showMistralKey">
+                  {{ showMistralKey ? 'Masquer' : 'Afficher' }}
+                </button>
+              </div>
+            </div>
+            <a
+              href="https://console.mistral.ai/api-keys"
+              target="_blank"
+              rel="noopener"
+              class="get-key-link"
+            >
+              Obtenir une clé sur console.mistral.ai →
+            </a>
+          </div>
+
+          <div class="section">
+            <div class="section-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              Modèles utilisés
+            </div>
+            <p class="section-desc">
+              <code>claude-haiku-4-5</code> — réécriture d'accroche (Anthropic).<br/>
+              <code>mistral-small-latest</code> — adaptation automatique complète (Mistral).
             </p>
           </div>
 
@@ -117,13 +154,15 @@ import { ref, computed } from 'vue'
 
 const props = defineProps({
   modelValue: String,
-  version: { type: Number, default: 0 },
+  mistralKey: { type: String, default: '' },
+  version:    { type: Number, default: 0 },
 })
 
-const emit = defineEmits(['update:modelValue', 'close', 'reset'])
+const emit = defineEmits(['update:modelValue', 'update:mistralKey', 'close', 'reset'])
 
-const showKey    = ref(false)
-const confirming = ref(false)
+const showKey       = ref(false)
+const showMistralKey = ref(false)
+const confirming    = ref(false)
 
 const isValid = computed(() =>
   (props.modelValue || '').startsWith('sk-ant-')

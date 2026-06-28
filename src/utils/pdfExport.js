@@ -3,7 +3,16 @@ async function getPdfMake() {
     import('pdfmake/build/pdfmake'),
     import('pdfmake/build/vfs_fonts'),
   ])
-  pdfMake.vfs = pdfFonts?.default?.pdfMake?.vfs ?? pdfFonts?.default?.vfs ?? pdfFonts?.vfs
+  // pdfmake 0.3.x: the vfs_fonts module IS the VFS object (font filename → base64)
+  pdfMake.vfs = pdfFonts.default ?? pdfFonts
+  pdfMake.fonts = {
+    Roboto: {
+      normal:      'Roboto-Regular.ttf',
+      bold:        'Roboto-Medium.ttf',
+      italics:     'Roboto-Italic.ttf',
+      bolditalics: 'Roboto-MediumItalic.ttf',
+    },
+  }
   return pdfMake
 }
 

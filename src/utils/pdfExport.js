@@ -84,7 +84,7 @@ function buildSidebar(resume) {
   out.push({ text: (p.lastName || '').toUpperCase(), fontSize: 13, bold: true, color: C.white, lineHeight: 1.15, characterSpacing: 0.5 })
   out.push({ text: p.title || '', fontSize: 8.5, italics: true, color: C.sideDim, margin: [0, 5, 0, 14] })
 
-  // Contact — plain text, no emoji (font limitation)
+  // Contact -plain text, no emoji (font limitation)
   const contactItems = [
     p.location && p.location,
     p.phone    && p.phone,
@@ -113,7 +113,7 @@ function buildSidebar(resume) {
   const langs = (resume.languages || []).filter(l => l.name)
   if (langs.length) {
     out.push(...sbSection('Langues', langs.map(l => ({
-      text: (l.countryCode ? '[' + l.countryCode + '] ' : '') + l.name + (l.level ? ' — ' + l.level : ''),
+      text: (l.countryCode ? '[' + l.countryCode + '] ' : '') + l.name + (l.level ? ' - ' + l.level : ''),
       fontSize: 8, color: C.sideTxt, margin: [0, 0, 0, 3],
     }))))
   }
@@ -195,7 +195,7 @@ function buildMain(resume) {
     for (const edu of edus) {
       out.push({
         stack: [
-          { text: edu.degree + (edu.period ? ' — ' + edu.period : ''), fontSize: 9, bold: true, color: C.blue, margin: [0, 0, 0, 1] },
+          { text: edu.degree + (edu.period ? ' - ' + edu.period : ''), fontSize: 9, bold: true, color: C.blue, margin: [0, 0, 0, 1] },
           { text: edu.school, fontSize: 8.5, color: C.body },
           ...(edu.description ? [{ text: edu.description, fontSize: 8, color: C.muted, margin: [0, 2, 0, 0] }] : []),
         ],
@@ -214,7 +214,7 @@ function buildMain(resume) {
           {
             text: [
               { text: proj.name, bold: true },
-              proj.tech ? { text: ' — ' + proj.tech, fontSize: 8, color: C.muted, italics: true } : '',
+              proj.tech ? { text: ' - ' + proj.tech, fontSize: 8, color: C.muted, italics: true } : '',
             ],
             fontSize: 9, color: C.blue, margin: [0, 0, 0, 2],
           },

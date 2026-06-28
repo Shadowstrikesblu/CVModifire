@@ -56,7 +56,7 @@
           <li v-for="l in resume.languages.filter(l => l.name)" :key="l.name">
             <span class="sb-flag">{{ toFlag(l.countryCode) }}</span>
             <span>{{ l.name }}</span>
-            <span v-if="l.level" class="sb-lang-level"> — {{ l.level }}</span>
+            <span v-if="l.level" class="sb-lang-level"> - {{ l.level }}</span>
           </li>
         </ul>
       </div>

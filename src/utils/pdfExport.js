@@ -1,18 +1,25 @@
+let _pdfMake = null
+
 async function getPdfMake() {
+  if (_pdfMake) return _pdfMake
+
   const [{ default: pdfMake }, pdfFonts] = await Promise.all([
     import('pdfmake/build/pdfmake'),
     import('pdfmake/build/vfs_fonts'),
   ])
-  pdfMake.vfs = pdfFonts.default ?? pdfFonts
-  pdfMake.fonts = {
-    Roboto: {
-      normal:      'Roboto-Regular.ttf',
-      bold:        'Roboto-Medium.ttf',
-      italics:     'Roboto-Italic.ttf',
-      bolditalics: 'Roboto-MediumItalic.ttf',
-    },
-  }
-  return pdfMake
+
+  // pdfmake 0.3.x uses virtualfs.writeFileSync with binary data
+  // vfs_fonts values are base64 strings → decode to Uint8Array
+  const vfs = pdfFonts.default ?? pdfFonts
+  Object.entries(vfs).forEach(([key, b64]) => {
+    const bin = atob(b64)
+    const bytes = new Uint8Array(bin.length)
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+    pdfMake.virtualfs.writeFileSync(key, bytes)
+  })
+
+  _pdfMake = pdfMake
+  return _pdfMake
 }
 
 const C = {
@@ -245,15 +252,9 @@ export async function exportPdfText(resume, filename) {
     }],
   }
 
-  const blob = await new Promise((resolve, reject) => {
-    try {
-      pdfMake.createPdf(docDef).getBlob(resolve)
-    } catch (e) {
-      reject(e)
-    }
-  })
-  const url = URL.createObjectURL(blob)
-  const a   = document.createElement('a')
+  const blob = await pdfMake.createPdf(docDef).getBlob()
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
   a.href     = url
   a.download = filename
   document.body.appendChild(a)

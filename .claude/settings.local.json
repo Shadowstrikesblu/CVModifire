@@ -4,7 +4,11 @@
       "PowerShell(Get-ChildItem \"c:\\\\Users\\\\hmoul\\\\ETNA\\\\THREE\\\\CVModifire\" -ErrorAction SilentlyContinue; if \\(-not \\(Test-Path \"c:\\\\Users\\\\hmoul\\\\ETNA\\\\THREE\\\\CVModifire\"\\)\\) { Write-Output \"Directory does not exist\" })",
       "Bash(npm run *)",
       "Bash(node -e \"const p = require\\('./node_modules/pdfmake/package.json'\\); console.log\\(p.version\\)\")",
-      "Bash(node -e \"const vfs = require\\('pdfmake/build/vfs_fonts'\\); console.log\\(typeof vfs, Object.keys\\(vfs\\).slice\\(0,5\\)\\)\")"
+      "Bash(node -e \"const vfs = require\\('pdfmake/build/vfs_fonts'\\); console.log\\(typeof vfs, Object.keys\\(vfs\\).slice\\(0,5\\)\\)\")",
+      "Bash(node -e \"const m = require\\('pdfmake/build/vfs_fonts'\\); console.log\\('type:', typeof m\\); console.log\\('top keys:', Object.keys\\(m\\).slice\\(0,5\\)\\); if\\(m.pdfMake\\) console.log\\('pdfMake.vfs keys:', Object.keys\\(m.pdfMake.vfs||{}\\).slice\\(0,5\\)\\);\")",
+      "Bash(node -e \"const m = require\\('pdfmake/build/pdfmake'\\); console.log\\('fonts:', JSON.stringify\\(m.fonts\\)\\); console.log\\('virtualfs keys:', Object.keys\\(m.virtualfs||{}\\).slice\\(0,3\\)\\);\")",
+      "Bash(node -e \"const m = require\\('pdfmake/build/pdfmake'\\); const vfs = require\\('pdfmake/build/vfs_fonts'\\); m.virtualfs.addBinaryFiles\\(vfs\\); console.log\\('after add, storage keys:', Object.keys\\(m.virtualfs.storage||{}\\).slice\\(0,3\\)\\);\")",
+      "Bash(node -e ' *)"
     ]
   }
 }

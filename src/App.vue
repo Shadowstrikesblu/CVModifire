@@ -34,7 +34,7 @@
   <!-- Modals -->
   <Teleport to="body">
     <ResumePreview v-if="showPreview" :resume="resume" :modal="true" @close="showPreview = false" />
-    <SettingsPanel v-if="showSettings" v-model="apiKey" @close="showSettings = false" />
+    <SettingsPanel v-if="showSettings" v-model="apiKey" :version="STORAGE_VERSION" @close="showSettings = false" @reset="resetResume" />
   </Teleport>
 
   <!-- Toast -->
@@ -61,7 +61,7 @@ import ResumeEditor   from './components/ResumeEditor.vue'
 import ResumePreview  from './components/ResumePreview.vue'
 import SettingsPanel  from './components/SettingsPanel.vue'
 import { analyzeJob, generateFilename, skillMatchesKeyword } from './utils/keywords.js'
-import { loadResume, saveResume, defaultResume } from './utils/storage.js'
+import { loadResume, saveResume, defaultResume, STORAGE_VERSION } from './utils/storage.js'
 import { exportPdfText } from './utils/pdfExport.js'
 
 // ── Core state ──────────────────────────────────────────────────
@@ -279,6 +279,14 @@ ${jobText.value.slice(0, 2500)}
   } finally {
     rewriteLoading.value = false
   }
+}
+
+// ── RESET ───────────────────────────────────────────────────────
+function resetResume() {
+  const defaults = defaultResume()
+  Object.keys(resume).forEach(k => { delete resume[k] })
+  Object.assign(resume, defaults)
+  showToast('CV réinitialisé aux valeurs par défaut', 'success')
 }
 
 // ── PDF EXPORT ──────────────────────────────────────────────────

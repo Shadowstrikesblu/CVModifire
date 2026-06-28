@@ -78,6 +78,30 @@
               ~$0.0003 par réécriture.
             </p>
           </div>
+
+          <div class="section section-danger">
+            <div class="section-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+              </svg>
+              Réinitialiser le CV
+            </div>
+            <p class="section-desc">
+              Restaure toutes les données du CV aux valeurs par défaut (v{{ version }}).
+              Toutes vos modifications seront perdues.
+            </p>
+            <div v-if="!confirming">
+              <button class="btn-reset" @click="confirming = true">
+                Charger les données par défaut
+              </button>
+            </div>
+            <div v-else class="confirm-row">
+              <span class="confirm-warn">Cette action est irréversible — continuer ?</span>
+              <button class="btn-reset-confirm" @click="doReset">Confirmer</button>
+              <button class="btn-cancel" @click="confirming = false">Annuler</button>
+            </div>
+          </div>
         </div>
 
         <div class="panel-footer">
@@ -93,10 +117,13 @@ import { ref, computed } from 'vue'
 
 const props = defineProps({
   modelValue: String,
+  version: { type: Number, default: 0 },
 })
-defineEmits(['update:modelValue', 'close'])
 
-const showKey = ref(false)
+const emit = defineEmits(['update:modelValue', 'close', 'reset'])
+
+const showKey    = ref(false)
+const confirming = ref(false)
 
 const isValid = computed(() =>
   (props.modelValue || '').startsWith('sk-ant-')
@@ -113,6 +140,12 @@ const statusText = computed(() =>
   : isValid.value ? 'Clé détectée'
   : 'Format invalide (doit commencer par sk-ant-)'
 )
+
+function doReset() {
+  confirming.value = false
+  emit('reset')
+  emit('close')
+}
 </script>
 
 <style scoped>
@@ -282,6 +315,64 @@ const statusText = computed(() =>
   display: flex;
   justify-content: flex-end;
 }
+
+.section-danger .section-title { color: var(--danger); }
+
+.btn-reset {
+  padding: 7px 14px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--danger);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-reset:hover { background: #fee2e2; }
+
+.confirm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.confirm-warn {
+  font-size: 12px;
+  color: var(--danger);
+  font-weight: 500;
+  flex: 1;
+  min-width: 180px;
+}
+
+.btn-reset-confirm {
+  padding: 6px 14px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-reset-confirm:hover { opacity: 0.85; }
+
+.btn-cancel {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-cancel:hover { border-color: var(--border-hover); }
 
 .btn-primary {
   padding: 0 20px;

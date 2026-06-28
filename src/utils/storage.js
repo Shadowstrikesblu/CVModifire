@@ -1,5 +1,6 @@
 const KEY = 'cvmodifire_resume'
 const VERSION = 3
+export const STORAGE_VERSION = VERSION
 
 export function loadResume() {
   try {
